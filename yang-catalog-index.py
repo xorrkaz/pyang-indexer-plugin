@@ -49,10 +49,10 @@ class IndexerPlugin(plugin.PyangPlugin):
 def emit_index(ctx, modules, fd):
     if not ctx.opts.yang_index_no_schema:
         fd.write(
-            "create table yindex(module, path, statement, argument, description, properties);\n")
+            "create table yindex(module, revision, path, statement, argument, description, properties);\n")
         if ctx.opts.yang_index_make_module_table:
             fd.write(
-                "create table modules(module, belongs_to, namespace, prefix, organization, maturity, document);\n")
+                "create table modules(module, revision, belongs_to, namespace, prefix, organization, maturity, document, file_path);\n")
     if not ctx.opts.yang_index_schema_only:
         for module in modules:
             if ctx.opts.yang_index_make_module_table:
@@ -69,7 +69,7 @@ def index_mprinter(module):
     global _yang_catalog_index_fd
 
     params = [module.arg]
-    args = ['belongs-to', 'namespace', 'prefix', 'organization']
+    args = ['revision', 'belongs-to', 'namespace', 'prefix', 'organization']
     for a in args:
         nlist = module.search(a)
         nstr = ''
@@ -86,7 +86,7 @@ def index_mprinter(module):
     # We don't yet know the maturity of the module, but we can get that from
     # the catalog later.
     _yang_catalog_index_fd.write(
-        "insert into modules values('%s', '%s', '%s', '%s', '%s', '', '');" % tuple(params) + "\n")
+        "insert into modules values('%s', '%s', '%s', '%s', '%s', '%s', '', '', '');" % tuple(params) + "\n")
 
 
 def index_escape_json(s):
@@ -117,11 +117,15 @@ def index_printer(stmt):
         return
 
     module = stmt.main_module()
+    rev = module.search_one('revision')
+    revision = ''
+    if rev_list:
+        revision = rev.arg
     path = statements.mk_path_str(stmt, True)
-    descr = stmt.search('description')
+    descr = stmt.search_one('description')
     dstr = ''
     if descr:
-        dstr = descr[0].arg
+        dstr = descr.arg
         dstr = dstr.replace("'", r"''")
     subs = []
     for i in stmt.substmts:
@@ -141,5 +145,5 @@ def index_printer(stmt):
                 a = index_escape_json(a)
             subs.append(
                 {k: {'value': a, 'has_children': has_children, 'children': []}})
-    _yang_catalog_index_fd.write("insert into yindex values('%s', '%s', '%s', '%s', '%s', '%s');" % (
-        module.arg, path, stmt.keyword, stmt.arg, dstr, json.dumps(subs)) + "\n")
+    _yang_catalog_index_fd.write("insert into yindex values('%s', '%s', '%s', '%s', '%s', '%s', '%s');" % (
+        module.arg, revision, path, stmt.keyword, stmt.arg, dstr, json.dumps(subs)) + "\n")
