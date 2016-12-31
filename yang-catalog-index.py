@@ -119,7 +119,7 @@ def index_printer(stmt):
     module = stmt.main_module()
     rev = module.search_one('revision')
     revision = ''
-    if rev_list:
+    if rev:
         revision = rev.arg
     path = statements.mk_path_str(stmt, True)
     descr = stmt.search_one('description')
