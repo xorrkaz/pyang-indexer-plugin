@@ -70,6 +70,8 @@ def index_mprinter(module):
 
     params = [module.arg]
     args = ['revision', 'belongs-to', 'namespace', 'prefix', 'organization']
+    ns_idx = args.index('namespace') + 1
+    org_idx = args.index('organization') + 1
     for a in args:
         nlist = module.search(a)
         nstr = ''
@@ -80,9 +82,9 @@ def index_mprinter(module):
         else:
             params.append('')
     # Attempt to normalize the organization for catalog retrieval.
-    m = re.search(r"urn:([^:]+):", params[2])
+    m = re.search(r"urn:([^:]+):", params[ns_idx])
     if m:
-        params[4] = m.group(1)
+        params[org_idx] = m.group(1)
     # We don't yet know the maturity of the module, but we can get that from
     # the catalog later.
     _yang_catalog_index_fd.write(
