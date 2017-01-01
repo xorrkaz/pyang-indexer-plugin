@@ -70,6 +70,8 @@ def index_mprinter(module):
 
     params = [module.arg]
     args = ['revision', 'belongs-to', 'namespace', 'prefix', 'organization']
+    # Allow for changes to the params array wihtout needing to remember to
+    # adjust static index numbers.
     ns_idx = args.index('namespace') + 1
     org_idx = args.index('organization') + 1
     for a in args:
