@@ -85,8 +85,9 @@ def index_mprinter(module):
         else:
             params.append('')
     # Attempt to normalize the organization for catalog retrieval.
-    if params[bt_idx] is not None:
-        ns = module.parent.search_one('namespace')
+    if params[bt_idx] is not None and params[bt_idx] != '':
+        bt = module.search_one('belongs-to')
+        ns = bt.search_one('namespace')
         if ns is not None:
             params[ns_ids] = ns.arg
     m = re.search(r"urn:([^:]+):", params[ns_idx])
