@@ -56,7 +56,7 @@ def emit_index(ctx, modules, fd):
     if not ctx.opts.yang_index_schema_only:
         for module in modules:
             if ctx.opts.yang_index_make_module_table:
-                index_mprinter(module)
+                index_mprinter(ctx, module)
             non_chs = module.i_typedefs.values() + module.i_features.values() + module.i_identities.values() + \
                 module.i_groupings.values() + module.i_extensions.values()
             for nch in non_chs:
@@ -65,7 +65,7 @@ def emit_index(ctx, modules, fd):
                 statements.iterate_i_children(child, index_printer)
 
 
-def index_mprinter(module):
+def index_mprinter(ctx, module):
     global _yang_catalog_index_fd
 
     params = [module.arg]
@@ -75,6 +75,8 @@ def index_mprinter(module):
     bt_idx = args.index('belongs-to') + 1
     ns_idx = args.index('namespace') + 1
     org_idx = args.index('organization') + 1
+    rev_idx = args.index('revision') + 1
+    prefix_idx = args.index('prefix') + 1
     for a in args:
         nlist = module.search(a)
         nstr = ''
@@ -87,9 +89,16 @@ def index_mprinter(module):
     # Attempt to normalize the organization for catalog retrieval.
     if params[bt_idx] is not None and params[bt_idx] != '':
         bt = module.search_one('belongs-to')
-        ns = bt.search_one('namespace')
-        if ns is not None:
-            params[ns_ids] = ns.arg
+        pf = bt.search_one('prefix')
+        if pf is not None:
+            params[prefix_idx] = pf.arg
+        pm = ctx.get_module(params[bt_idx], params[rev_idx])
+        if pm is None:
+            pm = ctx.search_module(module.pos, params[bt_idx], params[rev_idx])
+        if pm is not None:
+            ns = pm.search_one('namespace')
+            if ns is not None:
+                params[ns_idx] = ns.arg
     m = re.search(r"urn:([^:]+):", params[ns_idx])
     if m:
         params[org_idx] = m.group(1)
