@@ -72,6 +72,7 @@ def index_mprinter(module):
     args = ['revision', 'belongs-to', 'namespace', 'prefix', 'organization']
     # Allow for changes to the params array wihtout needing to remember to
     # adjust static index numbers.
+    bt_idx = args.index('belongs-to') + 1
     ns_idx = args.index('namespace') + 1
     org_idx = args.index('organization') + 1
     for a in args:
@@ -84,6 +85,10 @@ def index_mprinter(module):
         else:
             params.append('')
     # Attempt to normalize the organization for catalog retrieval.
+    if params[bt_idx] is not None:
+        ns = module.parent.search_one('namespace')
+        if ns is not None:
+            params[ns_ids] = ns.arg
     m = re.search(r"urn:([^:]+):", params[ns_idx])
     if m:
         params[org_idx] = m.group(1)
