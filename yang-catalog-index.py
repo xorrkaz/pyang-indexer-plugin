@@ -61,8 +61,10 @@ def emit_index(ctx, modules, fd):
                 module.i_groupings.values() + module.i_extensions.values()
             for nch in non_chs:
                 index_printer(nch)
-            for child in module.i_children:
-                statements.iterate_i_children(child, index_printer)
+            for ss in module.substmts:
+                if hasattr(ss, 'i_children') and len(ss.i_children):
+                    for child in ss.i_children:
+                        statements.iterate_i_children(child, index_printer)
 
 
 def index_mprinter(ctx, module):
@@ -135,7 +137,7 @@ def index_printer(stmt):
     if stmt.arg is None:
         return
 
-    module = stmt.main_module()
+    module = stmt.i_module
     rev = module.search_one('revision')
     revision = ''
     if rev:
