@@ -52,19 +52,35 @@ def emit_index(ctx, modules, fd):
             "create table yindex(module, revision, path, statement, argument, description, properties);\n")
         if ctx.opts.yang_index_make_module_table:
             fd.write(
-                "create table modules(module, revision, belongs_to, namespace, prefix, organization, maturity, compile_status, document, file_path);\n")
+                "create table modules(module, revision, belongs_to, namespace, prefix, organization, maturity, document, file_path);\n")
     if not ctx.opts.yang_index_schema_only:
+        mods = []
         for module in modules:
+            if module in mods:
+                continue
+            mods.append(module)
+            for i in module.search('include'):
+                subm = ctx.get_module(i.arg)
+                if subm is None:
+                    r = module.search_one('revision')
+                    if r is not None:
+                        subm = ctx.search_module(module.pos, i.arg, r.arg)
+                if subm is not None:
+                    mods.append(subm)
+        for module in mods:
             if ctx.opts.yang_index_make_module_table:
                 index_mprinter(ctx, module)
             non_chs = module.i_typedefs.values() + module.i_features.values() + module.i_identities.values() + \
                 module.i_groupings.values() + module.i_extensions.values()
+            for augment in module.search('augment'):
+                    if (hasattr(augment.i_target_node, 'i_module') and
+                            augment.i_target_node.i_module not in mods):
+                        for child in augment.i_children:
+                            statements.iterate_i_children(child, index_printer)
             for nch in non_chs:
                 index_printer(nch)
-            for ss in module.substmts:
-                if hasattr(ss, 'i_children') and len(ss.i_children):
-                    for child in ss.i_children:
-                        statements.iterate_i_children(child, index_printer)
+            for child in module.i_children:
+                statements.iterate_i_children(child, index_printer)
 
 
 def index_mprinter(ctx, module):
@@ -107,7 +123,7 @@ def index_mprinter(ctx, module):
     # We don't yet know the maturity of the module, but we can get that from
     # the catalog later.
     _yang_catalog_index_fd.write(
-        "insert into modules values('%s', '%s', '%s', '%s', '%s', '%s', '', '', '', '');" % tuple(params) + "\n")
+        "insert into modules values('%s', '%s', '%s', '%s', '%s', '%s', '', '', '');" % tuple(params) + "\n")
 
 
 def index_escape_json(s):
