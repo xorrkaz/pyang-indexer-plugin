@@ -73,10 +73,10 @@ def emit_index(ctx, modules, fd):
             non_chs = module.i_typedefs.values() + module.i_features.values() + module.i_identities.values() + \
                 module.i_groupings.values() + module.i_extensions.values()
             for augment in module.search('augment'):
-                    if (hasattr(augment.i_target_node, 'i_module') and
-                            augment.i_target_node.i_module not in mods):
-                        for child in augment.i_children:
-                            statements.iterate_i_children(child, index_printer)
+                if (hasattr(augment.i_target_node, 'i_module') and
+                        augment.i_target_node.i_module not in mods):
+                    for child in augment.i_children:
+                        statements.iterate_i_children(child, index_printer)
             for nch in non_chs:
                 index_printer(nch)
             for child in module.i_children:
