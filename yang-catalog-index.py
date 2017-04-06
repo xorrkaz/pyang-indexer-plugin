@@ -52,7 +52,7 @@ def emit_index(ctx, modules, fd):
             "create table yindex(module, revision, path, statement, argument, description, properties);\n")
         if ctx.opts.yang_index_make_module_table:
             fd.write(
-                "create table modules(module, revision, belongs_to, namespace, prefix, organization, maturity, document, file_path);\n")
+                "create table modules(module, revision, belongs_to, namespace, prefix, organization, maturity, compile_status, document, file_path);\n")
     if not ctx.opts.yang_index_schema_only:
         mods = []
         for module in modules:
@@ -123,7 +123,7 @@ def index_mprinter(ctx, module):
     # We don't yet know the maturity of the module, but we can get that from
     # the catalog later.
     _yang_catalog_index_fd.write(
-        "insert into modules values('%s', '%s', '%s', '%s', '%s', '%s', '', '', '');" % tuple(params) + "\n")
+        "insert into modules values('%s', '%s', '%s', '%s', '%s', '%s', '', '', '', '');" % tuple(params) + "\n")
 
 
 def index_escape_json(s):
