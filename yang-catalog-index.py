@@ -52,7 +52,7 @@ def emit_index(ctx, modules, fd):
             "create table yindex(module, revision, path, statement, argument, description, properties);\n")
         if ctx.opts.yang_index_make_module_table:
             fd.write(
-                "create table modules(module, revision, belongs_to, namespace, prefix, organization, maturity, compile_status, document, file_path);\n")
+                "create table modules(module, revision, yang_version, belongs_to, namespace, prefix, organization, maturity, compile_status, document, file_path);\n")
     if not ctx.opts.yang_index_schema_only:
         mods = []
         for module in modules:
@@ -87,7 +87,8 @@ def index_mprinter(ctx, module):
     global _yang_catalog_index_fd
 
     params = [module.arg]
-    args = ['revision', 'belongs-to', 'namespace', 'prefix', 'organization']
+    args = ['revision', 'yang-version', 'belongs-to',
+            'namespace', 'prefix', 'organization']
     # Allow for changes to the params array wihtout needing to remember to
     # adjust static index numbers.
     bt_idx = args.index('belongs-to') + 1
@@ -95,6 +96,7 @@ def index_mprinter(ctx, module):
     org_idx = args.index('organization') + 1
     rev_idx = args.index('revision') + 1
     prefix_idx = args.index('prefix') + 1
+    ver_idx = args.index('yang-version') + 1
     for a in args:
         nlist = module.search(a)
         nstr = ''
@@ -120,10 +122,14 @@ def index_mprinter(ctx, module):
     m = re.search(r"urn:([^:]+):", params[ns_idx])
     if m:
         params[org_idx] = m.group(1)
+
+    if params[ver_idx] is None or params[ver_idx] == '1':
+        params[ver_idx] = '1.0'
     # We don't yet know the maturity of the module, but we can get that from
     # the catalog later.
+    # The DB columns below need to be in the same order as the args list above.
     _yang_catalog_index_fd.write(
-        "insert into modules values('%s', '%s', '%s', '%s', '%s', '%s', '', '', '', '');" % tuple(params) + "\n")
+        "insert into modules (module, revision, yang_version, belongs_to, namespace, prefix, organization) values('%s', '%s', '%s', '%s', '%s', '%s', '%s');" % tuple(params) + "\n")
 
 
 def index_escape_json(s):
