@@ -136,11 +136,16 @@ def index_escape_json(s):
     return s.replace("\\", r"\\").replace("'", r"''").replace("\n", r"\n").replace("\t", r"\t").replace("\"", r"\"")
 
 
+def flatten_keyword(k):
+    if type(k) is tuple:
+        k = ':'.join(map(str, k))
+
+    return k
+
+
 def index_get_other(stmt):
     a = stmt.arg
-    k = stmt.keyword
-    if type(stmt.keyword) is tuple:
-        k = ':'.join(map(str, stmt.keyword))
+    k = flatten_keyword(stmt.keyword)
     if a:
         a = index_escape_json(a)
     else:
@@ -159,6 +164,8 @@ def index_printer(stmt):
     if stmt.arg is None:
         return
 
+    skey = flatten_keyword(stmt.keyword)
+
     module = stmt.i_module
     rev = module.search_one('revision')
     revision = ''
@@ -175,8 +182,7 @@ def index_printer(stmt):
         a = i.arg
         k = i.keyword
 
-        if type(i.keyword) is tuple:
-            k = ':'.join(map(str, i.keyword))
+        k = flatten_keyword(k)
 
         if i.keyword not in statements.data_definition_keywords:
             subs.append(index_get_other(i))
@@ -189,4 +195,4 @@ def index_printer(stmt):
             subs.append(
                 {k: {'value': a, 'has_children': has_children, 'children': []}})
     _yang_catalog_index_fd.write("insert into yindex values('%s', '%s', '%s', '%s', '%s', '%s', '%s');" % (
-        module.arg, revision, path, stmt.keyword, stmt.arg, dstr, json.dumps(subs)) + "\n")
+        module.arg, revision, path, skey, stmt.arg, dstr, json.dumps(subs)) + "\n")
