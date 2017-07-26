@@ -123,7 +123,7 @@ def index_mprinter(ctx, module):
     if m:
         params[org_idx] = m.group(1)
 
-    if params[ver_idx] is None or params[ver_idx] == '1':
+    if params[ver_idx] is None or params[ver_idx] == '' or params[ver_idx] == '1':
         params[ver_idx] = '1.0'
     # We don't yet know the maturity of the module, but we can get that from
     # the catalog later.
