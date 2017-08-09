@@ -6,6 +6,13 @@ import re
 
 _yang_catalog_index_fd = None
 
+NS_MAP = {
+    "http://cisco.com/ns/yang/": "cisco",
+    "http://www.huawei.com/netconf": "huawei",
+    "http://openconfig.net/yang": "openconfig",
+    "http://tail-f.com/": "tail-f"
+}
+
 
 def pyang_plugin_init():
     plugin.register_plugin(IndexerPlugin())
@@ -49,7 +56,7 @@ class IndexerPlugin(plugin.PyangPlugin):
 def emit_index(ctx, modules, fd):
     if not ctx.opts.yang_index_no_schema:
         fd.write(
-            "create table yindex(module, revision, path, statement, argument, description, properties);\n")
+            "create table yindex(module, revision, organization, path, statement, argument, description, properties);\n")
         if ctx.opts.yang_index_make_module_table:
             fd.write(
                 "create table modules(module, revision, yang_version, belongs_to, namespace, prefix, organization, maturity, compile_status, document, file_path);\n")
@@ -108,20 +115,10 @@ def index_mprinter(ctx, module):
             params.append('')
     # Attempt to normalize the organization for catalog retrieval.
     if params[bt_idx] is not None and params[bt_idx] != '':
-        bt = module.search_one('belongs-to')
-        pf = bt.search_one('prefix')
-        if pf is not None:
-            params[prefix_idx] = pf.arg
-        pm = ctx.get_module(params[bt_idx], params[rev_idx])
-        if pm is None:
-            pm = ctx.search_module(module.pos, params[bt_idx], params[rev_idx])
-        if pm is not None:
-            ns = pm.search_one('namespace')
-            if ns is not None:
-                params[ns_idx] = ns.arg
-    m = re.search(r"urn:([^:]+):", params[ns_idx])
-    if m:
-        params[org_idx] = m.group(1)
+        (res_ns, res_pf) = get_namespace_prefix(ctx, module)
+        params[ns_idx] = res_ns
+        params[prefix_idx] = res_pf
+    params[org_idx] = normalize_orgs(params[org_idx], params[ns_idx])
 
     if params[ver_idx] is None or params[ver_idx] == '' or params[ver_idx] == '1':
         params[ver_idx] = '1.0'
@@ -130,6 +127,41 @@ def index_mprinter(ctx, module):
     # The DB columns below need to be in the same order as the args list above.
     _yang_catalog_index_fd.write(
         "insert into modules (module, revision, yang_version, belongs_to, namespace, prefix, organization) values('%s', '%s', '%s', '%s', '%s', '%s', '%s');" % tuple(params) + "\n")
+
+
+def get_namespace_prefix(ctx, module):
+    prefix = ''
+    namespace = ''
+    revision = None
+
+    bt = module.search_one('belongs-to')
+    pf = bt.search_one('prefix')
+    rev = bt.search_one('revision')
+    if pf is not None:
+        prefix = pf.arg
+    if rev is not None:
+        revision = rev.arg
+    pm = ctx.get_module(bt.arg, revision)
+    if pm is None:
+        pm = ctx.search_module(module.pos, bt.arg, revision)
+    if pm is not None:
+        ns = pm.search_one('namespace')
+        if ns is not None:
+            namespace = ns.arg
+
+    return (namespace, prefix)
+
+
+def normalize_org(o, ns):
+    m = re.search(r'urn:([^:]+):', ns)
+    if m:
+        return m.group(1)
+
+    for n, org in NS_MAP.items():
+        if re.search(r'^' + n, ns):
+            return org
+
+    return o
 
 
 def index_escape_json(s):
@@ -168,9 +200,20 @@ def index_printer(stmt):
 
     module = stmt.i_module
     rev = module.search_one('revision')
+    org = module.search_one('organization')
+    ns = module.search_one('namespace')
     revision = ''
+    organization = ''
+    namespace = ''
     if rev:
         revision = rev.arg
+    if ns:
+        namespace = ns.arg
+    if org:
+        if namespace == '':
+            (namespace, res_pf) = get_namespace_prefix(
+                module.i_ctx, module)
+        organization = normalize_org(org.arg, namespace)
     path = statements.mk_path_str(stmt, True)
     descr = stmt.search_one('description')
     dstr = ''
@@ -194,5 +237,5 @@ def index_printer(stmt):
                 a = index_escape_json(a)
             subs.append(
                 {k: {'value': a, 'has_children': has_children, 'children': []}})
-    _yang_catalog_index_fd.write("insert into yindex values('%s', '%s', '%s', '%s', '%s', '%s', '%s');" % (
-        module.arg, revision, path, skey, stmt.arg, dstr, json.dumps(subs)) + "\n")
+    _yang_catalog_index_fd.write("insert into yindex values('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s');" % (
+        module.arg, revision, organization, path, skey, stmt.arg, dstr, json.dumps(subs)) + "\n")
