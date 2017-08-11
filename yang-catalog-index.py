@@ -237,5 +237,5 @@ def index_printer(stmt):
                 a = index_escape_json(a)
             subs.append(
                 {k: {'value': a, 'has_children': has_children, 'children': []}})
-    _yang_catalog_index_fd.write("insert into yindex values('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s');" % (
+    _yang_catalog_index_fd.write("INSERT INTO yindex (module, revision, organization, path, statement, argument, description, properties) VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s');" % (
         module.arg, revision, organization, path, skey, stmt.arg, dstr, json.dumps(subs)) + "\n")
