@@ -118,7 +118,7 @@ def index_mprinter(ctx, module):
         (res_ns, res_pf) = get_namespace_prefix(ctx, module)
         params[ns_idx] = res_ns
         params[prefix_idx] = res_pf
-    params[org_idx] = normalize_orgs(params[org_idx], params[ns_idx])
+    params[org_idx] = normalize_org(params[org_idx], params[ns_idx])
 
     if params[ver_idx] is None or params[ver_idx] == '' or params[ver_idx] == '1':
         params[ver_idx] = '1.0'
