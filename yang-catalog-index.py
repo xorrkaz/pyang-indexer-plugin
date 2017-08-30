@@ -122,6 +122,8 @@ def index_mprinter(ctx, module):
 
     if params[ver_idx] is None or params[ver_idx] == '' or params[ver_idx] == '1':
         params[ver_idx] = '1.0'
+    if params[rev_idx] == '':
+        params[rev_idx] = '1970-01-01'
     # We don't yet know the maturity of the module, but we can get that from
     # the catalog later.
     # The DB columns below need to be in the same order as the args list above.
@@ -221,6 +223,8 @@ def index_printer(stmt):
         dstr = descr.arg
         dstr = dstr.replace("'", r"''")
     subs = []
+    if revision == '':
+        revision = '1970-01-01'
     for i in stmt.substmts:
         a = i.arg
         k = i.keyword
