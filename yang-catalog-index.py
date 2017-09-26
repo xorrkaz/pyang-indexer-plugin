@@ -211,11 +211,12 @@ def index_printer(stmt):
         revision = rev.arg
     if ns:
         namespace = ns.arg
+    if namespace == '':
+        (namespace, res_pf) = get_namespace_prefix(
+            module.i_ctx, module)
     if org:
-        if namespace == '':
-            (namespace, res_pf) = get_namespace_prefix(
-                module.i_ctx, module)
-        organization = normalize_org(org.arg, namespace)
+        organization = org.arg
+    organization = normalize_org(organization, namespace)
     path = statements.mk_path_str(stmt, True)
     descr = stmt.search_one('description')
     dstr = ''
