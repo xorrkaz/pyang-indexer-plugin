@@ -163,6 +163,9 @@ def normalize_org(o, ns):
         if re.search(r'^' + n, ns):
             return org
 
+    if o == '':
+        return 'independent'
+
     return o
 
 
